@@ -2,12 +2,11 @@
 import os
 from parselmouth.praat import run_file
 from flask import Flask, request
-app = Flask(__name__)
 from werkzeug.utils import secure_filename
 import voiceAnalyser.voice as mysp
 
 
-
+# 
 # Flask application setup
 app = Flask(__name__)
 
