@@ -60,11 +60,24 @@ def upload_audio():
     try:
         voice_analysis = VoiceAnalysisResults()
 
-        # Call the analysis functions and store the results
         voice_analysis.syllables = mysp.myspsyl(filename_wo_ext, UPLOAD_FOLDER)
         voice_analysis.pauses = mysp.mysppaus(filename_wo_ext, UPLOAD_FOLDER)
         voice_analysis.speech_rate = mysp.myspsr(filename_wo_ext, UPLOAD_FOLDER)
-        # ... call other functions and store their results ...
+        voice_analysis.articulation_rate = mysp.myspatc(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.speaking_duration = mysp.myspst(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.original_duration = mysp.myspod(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.balance = mysp.myspbala(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.f0_mean = mysp.myspf0mean(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.f0_std = mysp.myspf0sd(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.f0_median = mysp.myspf0med(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.f0_min = mysp.myspf0min(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.f0_max = mysp.myspf0max(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.f0_quantile25 = mysp.myspf0q25(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.f0_quantile75 = mysp.myspf0q75(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.pronunciation_score_percentage = mysp.mysppron(filename_wo_ext, UPLOAD_FOLDER)
+        voice_analysis.gender_analysis_result = mysp.myspgend(filename_wo_ext, UPLOAD_FOLDER)
+        # voice_analysis.prosody_analysis_results = mysp.myprosody(filename_wo_ext, UPLOAD_FOLDER) # Uncomment if needed
+
 
         # Check for errors in any of the results
         for attr, value in voice_analysis.to_dict().items():
