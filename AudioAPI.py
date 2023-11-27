@@ -33,11 +33,15 @@ class VoiceAnalysisResults:
         self.f0_max = None
         self.f0_quantile25 = None
         self.f0_quantile75 = None
+        self.pronunciation_score_percentage = None
+        self.gender_analysis_result = None
+        self.prosody_analysis_results = None
         self.error = None
 
     def to_dict(self):
         # Convert all attributes to a dictionary
         return {attr: getattr(self, attr) for attr in self.__dict__}
+
 
 @app.route('/upload-audio', methods=['POST'])
 def upload_audio():
