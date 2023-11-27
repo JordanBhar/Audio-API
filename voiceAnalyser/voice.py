@@ -42,22 +42,23 @@ def run_praat_file(m, p):
         print()
         print ("Try again the sound of the audio was not clear")
 
-def myspsyl(m,p):
-    sound=p+"/"+"dataset"+"/"+"audioFiles"+"/"+m+".wav"
-    sourcerun=p+"/"+"dataset"+"/"+"essen"+"/"+"myspsolution.praat"
-    path=p+"/"+"dataset"+"/"+"audioFiles"+"/"
+
+
+def myspsyl(m, p):
+    base_dir = os.path.dirname(os.path.dirname(p))
+    sound = os.path.join(p, m + ".wav")
+    sourcerun = os.path.join(base_dir, "essen", "myspsolution.praat")
+    path = p
+
     try:
-        objects= run_file(sourcerun, -20, 2, 0.3, "yes",sound,path, 80, 400, 0.01, capture_output=True)
-        print (objects[0]) # This will print the info from the sound object, and objects[0] is a parselmouth.Sound object
-        z1=str( objects[1]) # This will print the info from the textgrid object, and objects[1] is a parselmouth.Data object with a TextGrid inside
-        z2=z1.strip().split()
-        z3=int(z2[0]) # will be the integer number 10
-        z4=float(z2[3]) # will be the floating point number 8.3
-        print ("number_ of_syllables=",z3)
-    except:
-        z3=0
-        print ("Try again the sound of the audio was not clear")
-    return; 
+        objects = run_file(sourcerun, -20, 2, 0.3, "yes", sound, path, 80, 400, 0.01, capture_output=True)
+        z1 = str(objects[1])
+        z2 = z1.strip().split()
+        z3 = int(z2[0])  # Number of syllables
+        return {"number_of_syllables": z3}
+    except Exception as e:
+        return {"error": str(e)}
+
 
 def mysppaus(m,p):
     base_dir = os.path.dirname(os.path.dirname(p))
