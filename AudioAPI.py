@@ -1,5 +1,6 @@
 # Flask application code in AudioAPI.py
 import os
+import traceback
 from parselmouth.praat import run_file
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
@@ -37,30 +38,34 @@ class VoiceAnalysisResults:
 @app.route('/upload-audio', methods=['POST'])
 def upload_audio():
     if 'audio' not in request.files:
+        app.logger.warning("Audio part missing in request")
         return 'No audio file part', 400
 
     file = request.files['audio']
     if file.filename == '':
+        app.logger.warning("No file selected for uploading")
         return 'No selected file', 400
 
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    file.save(file_path)
+
+    try:
+        file.save(file_path)
+    except Exception as e:
+        app.logger.error(f"Failed to save file: {e}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
     filename_wo_ext = os.path.splitext(filename)[0]
 
     try:
         voice_analysis = VoiceAnalysisResults()
-
+        
+        # Perform voice analysis using external functions
         voice_analysis.total_speech_analysis_results = mysp.mysptotal(filename_wo_ext, UPLOAD_FOLDER)
         voice_analysis.pronunciation_score_percentage = mysp.mysppron(filename_wo_ext, UPLOAD_FOLDER)
         voice_analysis.gender_analysis_result = mysp.myspgend(filename_wo_ext, UPLOAD_FOLDER)
-        # voice_analysis.prosody_analysis_results = mysp.myprosody(filename_wo_ext, UPLOAD_FOLDER) 
-
-        # Figure out if this is needed to call
-        # voice_analysis.speech_lev_results = mysp.mysplev(filename_wo_ext, UPLOAD_FOLDER)
-
-
-
+        
         # Check for errors in any of the results
         for attr, value in voice_analysis.to_dict().items():
             if isinstance(value, dict) and 'error' in value:
@@ -69,13 +74,27 @@ def upload_audio():
 
         # If an error occurred in any function, return the error
         if voice_analysis.error is not None:
+            app.logger.error(f"Error in voice analysis: {voice_analysis.error}")
             return jsonify({"error": voice_analysis.error}), 500
 
         # Return the structured results as JSON
         return jsonify(voice_analysis.to_dict()), 200
     except Exception as e:
-        app.logger.error(f"An error occurred during ML processing: {e}")
+        app.logger.error(f"An error occurred during voice analysis processing: {e}")
+        traceback.print_exc()  # This will print the full traceback to the log
         return jsonify({"error": str(e)}), 500
+    finally:
+        # Delete the uploaded file after processing
+        try:
+            os.remove(file_path)
+            app.logger.info(f"Successfully deleted file: {file_path}")
+
+            textgrid_path = file_path.replace('.wav', '.TextGrid')  # Assuming the audio file is a .wav file
+            os.remove(textgrid_path)
+            app.logger.info(f"Successfully deleted TextGrid file: {textgrid_path}")
+        except Exception as e:
+            app.logger.error(f"Failed to delete file: {e}")
+            traceback.print_exc()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
