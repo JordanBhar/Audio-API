@@ -88,6 +88,7 @@ def upload_audio():
             textgrid_path = wav_file_path.replace('.wav', '.TextGrid')  # Assuming the audio file is a .wav file
             os.remove(textgrid_path)
             app.logger.info(f"Successfully deleted TextGrid file: {textgrid_path}")
+            
         except Exception as e:
             app.logger.error(f"Failed to delete file: {e}")
             traceback.print_exc()
