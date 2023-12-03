@@ -1,13 +1,10 @@
-# Flask application code in AudioAPI.py
 import os
 import traceback
-from parselmouth.praat import run_file
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
+from pydub import AudioSegment  # Import AudioSegment from pydub
 import voiceAnalyser.voice as mysp
 
-
-# 
 # Flask application setup
 app = Flask(__name__)
 
@@ -23,17 +20,11 @@ class VoiceAnalysisResults:
         self.total_speech_analysis_results = None 
         self.pronunciation_score_percentage = None
         self.gender_analysis_result = None
-        # self.prosody_analysis_results = None
         self.error = None
-        
-        # self.speech_lev_results = None  # Added for mysplev results
-        
 
     def to_dict(self):
         # Convert all attributes to a dictionary
         return {attr: getattr(self, attr) for attr in self.__dict__}
-
-
 
 @app.route('/upload-audio', methods=['POST'])
 def upload_audio():
@@ -51,14 +42,19 @@ def upload_audio():
 
     try:
         file.save(file_path)
-    except Exception as e:
-        app.logger.error(f"Failed to save file: {e}")
-        traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
 
-    filename_wo_ext = os.path.splitext(filename)[0]
+        # Convert M4A to WAV if necessary
+        if file_path.endswith('.m4a'):
+            m4a_audio = AudioSegment.from_file(file_path, format="m4a")
+            wav_file_path = file_path.replace('.m4a', '.wav')
+            m4a_audio.export(wav_file_path, format="wav")
+            os.remove(file_path)  # Remove the original M4A file
+            file_path = wav_file_path  # Update file_path to the new WAV file
+        else:
+            wav_file_path = file_path  # If file is not M4A, proceed with the original file
 
-    try:
+        filename_wo_ext = os.path.splitext(filename)[0].replace('.m4a', '')
+
         voice_analysis = VoiceAnalysisResults()
         
         # Perform voice analysis using external functions
@@ -67,7 +63,7 @@ def upload_audio():
         voice_analysis.gender_analysis_result = mysp.myspgend(filename_wo_ext, UPLOAD_FOLDER)
         
         # Check for errors in any of the results
-        for attr, value in voice_analysis.to_dict().items():
+        for value in voice_analysis.to_dict().items():
             if isinstance(value, dict) and 'error' in value:
                 voice_analysis.error = value['error']
                 break
@@ -86,10 +82,10 @@ def upload_audio():
     finally:
         # Delete the uploaded file after processing
         try:
-            os.remove(file_path)
-            app.logger.info(f"Successfully deleted file: {file_path}")
+            os.remove(wav_file_path)
+            app.logger.info(f"Successfully deleted file: {wav_file_path}")
 
-            textgrid_path = file_path.replace('.wav', '.TextGrid')  # Assuming the audio file is a .wav file
+            textgrid_path = wav_file_path.replace('.wav', '.TextGrid')  # Assuming the audio file is a .wav file
             os.remove(textgrid_path)
             app.logger.info(f"Successfully deleted TextGrid file: {textgrid_path}")
         except Exception as e:
@@ -98,4 +94,3 @@ def upload_audio():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
-    #app.run(debug=True)
